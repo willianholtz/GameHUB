@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+config/front.json
+config/front.json.tmp
+vendor/
+cache/
+cores/*.AppImage
+cores/*.AppImage.zsync
+cores/*.tar.*
+emu-data/

@@ -1,0 +1,3 @@
+PySide6>=6.5
+# py7zr é instalado automaticamente num venv privado (vendor/venv)
+# quando você usa "Baixar RetroArch (embutido)" — não exige nada do sistema.

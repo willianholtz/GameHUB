@@ -1,0 +1,24 @@
+Ícones dos sistemas — GameHub
+=============================
+
+PNGs em assets/systems/ (e variantes brancas em white/), usados na barra
+lateral e em Configurações → Emuladores.
+
+1. Retro consoles (coloridos)
+   "Retro Game Console Icons" — KyleBing
+   https://github.com/KyleBing/retro-game-console-icons
+   Licença: CC BY 4.0 — crédito obrigatório (feito aqui).
+
+2. Controles modernos (silhuetas brancas: PS2/PS3/PS4, Xbox, Wii, Wii U,
+   Switch/Joy-Con)
+   "Controllercons" — Jesse Abadilla et al.
+   https://controllercons.github.io
+   Licença: SIL Open Font License 1.1 — redistribuição permitida com
+   aviso de licença (feito aqui).
+
+3. Nintendo 3DS e 3DO
+   Ilustrações autorais originais do GameHub, publicadas sob a mesma
+   licença MIT do projeto.
+
+Todos os nomes de marcas pertencem aos seus respectivos donos; os ícones
+são usados apenas para identificação de sistemas em interface pessoal.
