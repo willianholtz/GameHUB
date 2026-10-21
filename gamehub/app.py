@@ -5,8 +5,8 @@ import datetime
 import os
 import time
 
-from PySide6.QtCore import (QAbstractListModel, QEvent, QModelIndex, QSize, Qt,
-                            QThread, QTimer, QUrl, Signal)
+from PySide6.QtCore import (QAbstractListModel, QEvent, QModelIndex, QProcess,
+                            QSize, Qt, QThread, QTimer, QUrl, Signal)
 from PySide6.QtGui import (QBrush, QColor, QDesktopServices, QFont, QIcon,
                            QLinearGradient, QPainter, QPen, QPixmap, QPolygon)
 from PySide6.QtCore import QPoint
@@ -16,9 +16,10 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QFileDialog, QFrame,
                                QPushButton, QScrollArea, QStyle, QToolButton,
                                QVBoxLayout, QWidget, QDialog,
                                QDialogButtonBox, QStyledItemDelegate,
-                               QStyleOptionViewItem, QAbstractItemView)
+                               QStyleOptionViewItem, QAbstractItemView,
+                               QSystemTrayIcon)
 
-from . import appstore, cheats, runners
+from . import appstore, cheats, details, runners
 from .catalog import SYSTEMS, sys_short
 from .config import Config, PROJECT_DIR
 from .icons import all_icon, emulator_icon, system_icon
@@ -244,6 +245,7 @@ class MainWindow(QWidget):
             self.setWindowIcon(QIcon(icon))
         self.setWindowTitle(tr(self.cfg, "app_title"))
         self.resize(1280, 800)
+        self._setup_tray()
 
         self._start_gamepad()
         QTimer.singleShot(0, self.rescan)
@@ -577,10 +579,56 @@ class MainWindow(QWidget):
         idx = self.list.currentIndex()
         return self.model.game_at(idx.row()) if idx.isValid() else None
 
+    # ---------- tray enquanto joga ----------
+    def _setup_tray(self) -> None:
+        """Tray icon: some na bandeja enquanto um jogo está rodando."""
+        self.tray = QSystemTrayIcon(self)
+        icon = self.windowIcon()
+        if icon.isNull():
+            icon = QIcon(system_icon("arcade", 64))
+        self.tray.setIcon(icon)
+        menu = QMenu()
+        a_show = menu.addAction(tr(self.cfg, "tray_show"))
+        a_show.triggered.connect(self._tray_show_window)
+        a_stop = menu.addAction(tr(self.cfg, "tray_stop"))
+        a_stop.triggered.connect(self.stop)
+        a_quit = menu.addAction(tr(self.cfg, "tray_quit"))
+        a_quit.triggered.connect(self._tray_quit)
+        self.tray.setContextMenu(menu)
+        self.tray.activated.connect(self._tray_activated)
+
+    def _tray_show(self, game: Game) -> None:
+        if self.tray:
+            self.tray.setToolTip(tr(self.cfg, "tray_playing", t=game.title))
+            self.tray.show()
+
+    def _tray_hide(self) -> None:
+        if self.tray:
+            self.tray.hide()
+
+    def _tray_show_window(self) -> None:
+        self.show()
+        self.raise_()
+        self.activateWindow()
+
+    def _tray_activated(self, reason) -> None:
+        if reason == QSystemTrayIcon.Trigger:
+            self._tray_show_window()
+
+    def _tray_quit(self) -> None:
+        if self.proc and self.proc.state() != QProcess.ProcessState.NotRunning:
+            self.proc.terminate()
+            self.proc.waitForFinished(3000)
+        QApplication.quit()
+
     # ---------- jogar ----------
     def play(self) -> None:
         game = self._current_game()
-        if not game or (self.proc and self.proc.state() != self.proc.NotRunning):
+        if game:
+            self._play_game(game)
+
+    def _play_game(self, game: Game) -> None:
+        if self.proc and self.proc.state() != QProcess.ProcessState.NotRunning:
             return
         # modo core do RetroArch: avisa se o core escolhido sumiu da pasta
         emu = self.cfg["emulators"].get(game.system) or {}
@@ -604,6 +652,7 @@ class MainWindow(QWidget):
         self.proc, emu_name = result
         self.running_game = game
         self.proc.finished.connect(self._on_finished)
+        self._tray_show(game)
         self.hide()
 
     def _on_finished(self, *_a) -> None:
@@ -612,11 +661,12 @@ class MainWindow(QWidget):
             self.cfg.save()
         self.proc = None
         self.running_game = None
+        self._tray_hide()
         self.show()
         self.list.viewport().update()
 
     def stop(self) -> None:
-        if self.proc and self.proc.state() != self.proc.NotRunning:
+        if self.proc and self.proc.state() != QProcess.ProcessState.NotRunning:
             self.proc.terminate()
             self.proc.waitForFinished(5000)
 
@@ -625,8 +675,15 @@ class MainWindow(QWidget):
         game = self._current_game()
         if not game:
             return
+        menu = self._build_menu(game)
+        menu.popup(self.list.viewport().mapToGlobal(pos))
+
+    def _build_menu(self, game: Game) -> QMenu:
         menu = QMenu(self)
-        running = self.proc and self.proc.state() != self.proc.NotRunning
+        a_det = menu.addAction(tr(self.cfg, "menu_details"))
+        a_det.triggered.connect(lambda: self.open_details(game))
+        menu.addSeparator()
+        running = self.proc and self.proc.state() != QProcess.ProcessState.NotRunning
         a_play = menu.addAction(tr(self.cfg, "play"))
         a_play.setEnabled(not running)
         a_play.triggered.connect(self.play)
@@ -649,7 +706,13 @@ class MainWindow(QWidget):
         menu.addSeparator()
         a_del = menu.addAction(tr(self.cfg, "delete_rom"))
         a_del.triggered.connect(lambda: self.delete_game(game))
-        menu.popup(self.list.viewport().mapToGlobal(pos))
+        return menu
+
+    def open_details(self, game: Game) -> None:
+        """Botão direito → Detalhes (ícone grande + meta do gamelist.xml)."""
+        self._details_dlg = details.DetailsDialog(
+            self.cfg, game, play_cb=lambda: self._play_game(game), parent=self)
+        self._details_dlg.show()
 
     def open_cheats(self, game: Game, core: str) -> None:
         """Seleção de cheats do jogo (botão direito → Cheats)."""
@@ -716,6 +779,10 @@ class MainWindow(QWidget):
                         ".png", ".jpg", ".jpeg", ".webp"):
                     targets.append(os.path.join(game.dir, fn))
             self._to_trash(targets, trash, info)
+        elif os.path.isfile(game.path):
+            # PS3 em .iso (ou jogo-arquivo em modo pasta): só o arquivo
+            # vai pra lixeira — NUNCA a pasta raiz da biblioteca
+            self._to_trash([game.path], trash, info)
         else:
             # pastas (PS4/PS3): move a pasta inteira
             self._to_trash([game.dir], trash, info)

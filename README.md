@@ -69,6 +69,8 @@ pip install -r requirements.txt   # só PySide6
 3. 📥 clique no botão de capas pra preencher a biblioteca
 4. **Duplo clique pra jogar** (usa GameMode se `gamemoderun` existir;
    o jogo abre em tela cheia, sem menu)
+5. (opcional) tem `gamelist.xml` na pasta da ROM (padrão ES-DE)? Ele lê
+   sozinho — gênero, nota e descrição aparecem no **Detalhes** de cada jogo
 
 ## Recursos
 
@@ -76,6 +78,13 @@ pip install -r requirements.txt   # só PySide6
   grátis) pelo nome da ROM; cache no projeto. Fallback **ScreenScraper**
   (credencial grátis em Configurações → Geral) cobre o que a base oficial não
   acha. Sem capa, placeholder com gradiente.
+- **Metadados de verdade (gamelist.xml)** — joga um `gamelist.xml` (padrão
+  EmulationStation/ES-DE) na pasta da ROM e o GameHub lê nome, gênero, nota
+  e descrição — o `<name>` vira o título da grade. XML quebrado não derruba
+  a biblioteca.
+- **Tela de detalhes** — botão direito → **Detalhes**: ícone grande, título,
+  sistema, gênero, nota (X/10), descrição e caminho, com **Jogar** ali
+  mesmo.
 - **Cheats sem menu** — botão direito no jogo → **Cheats**: lista os trapaças
   do `.cht` oficial (baixa automaticamente), marque e salve. Ao abrir o jogo,
   o RetroArch carrega e aplica sozinho — o menu nunca aparece. Só em sistemas
@@ -95,12 +104,18 @@ pip install -r requirements.txt   # só PySide6
   SIL OFL 1.1; 3DS e 3DO autorais) — ver `assets/systems/CREDITS.txt`.
 - **Controles** — detecta gamepads; navega a grade pelo D-pad/analógico:
   A joga, B volta, Start abre config. Plugou, já funciona.
-- **Grade com capas reais** — icon0.png do PS4, capas baixadas ou `jogo.png`
-  ao lado da ROM; badge do emulador em cada jogo.
+- **Grade com capas reais** — icon0.png do PS4, ICON0 do PS3 (das pastas
+  **ou de dentro do `.iso`**, case-insensitive — igual o RPCS3 puxa), capas
+  baixadas ou `jogo.png` ao lado da ROM; badge do emulador em cada jogo.
 - Busca, filtro por sistema na barra lateral, favoritos (★), último jogado.
-- Menu por botão direito: jogar/parar, favoritar, **verificar integridade**
-  (detecta arquivos zerados), abrir pasta, **apagar** (lixeira com
-  confirmação dupla).
+- Menu por botão direito: **detalhes**, jogar/parar, favoritar,
+  **verificar integridade** (detecta arquivos zerados), abrir pasta,
+  **apagar** (lixeira com confirmação dupla).
+- **Tray icon enquanto joga** — o GameHub some pra bandeja com o título do
+  jogo no tooltip; botão direito na bandeja: **Mostrar / Parar / Sair**.
+- **Configuração levo** — ⚙ → Geral → **Exportar/Importar configuração**:
+  um `.json` com tudo (pastas de ROM, emuladores, favoritos). No PC novo,
+  importou e era. Importar pede confirmação (substitui a atual).
 - **F11** alterna tela cheia da janela; **Ctrl+scroll** redimensiona os
   ícones; **sidebar colapsável** (só ícones dos consoles, com dica).
 - Suporte a: PS4 (pastas CUSA), PS3 (RPCS3), PS2, PS1, PSP, Switch, 3DS,
@@ -122,8 +137,11 @@ GameHUB/
 │   ├── config.py       # config portátil (config/front.json)
 │   ├── controls.py     # detecção de gamepads
 │   ├── covers.py       # capas automáticas (Libretro Thumbnails)
+│   ├── details.py      # tela de detalhes do jogo (ícone grande + meta)
 │   ├── gamepad.py      # navegação da grade pelo controle
+│   ├── gamelist.py     # metadados por jogo (gamelist.xml, padrão ES-DE)
 │   ├── icons.py        # badges de emulador + ícones reais dos consoles
+│   ├── iso9660.py      # leitor de ISO9660 (ícone/título de PS3 .iso)
 │   ├── ra_vendor.py    # RetroArch portátil + cores + filtros + cheats
 │   ├── screenscraper.py # fallback de capas (ScreenScraper)
 │   ├── scanner.py      # varredura multi-pasta por sistema
@@ -142,11 +160,15 @@ GameHUB/
 
 ## Roadmap
 
-- [ ] PS3: ícones/thumbs do RPCS3
-- [ ] Metadados por jogo (nota, gênero) via gamelist.xml
-- [ ] Tela de detalhes do jogo
-- [ ] Tray icon enquanto joga
-- [ ] Export/import da config
+- [x] PS3: ícones/títulos como o RPCS3 puxa — pastas PKG e dumps
+  `PS3_GAME/` com busca case-insensitive (Linux não perdoa `EBOOT.BIN`),
+  e `.iso` (PS3ISO) com `ICON0.PNG`/`PARAM.SFO` lidos de dentro da
+  imagem (camada ISO9660; dump bruto só-UDF cai na capa automática)
+- [x] Metadados por jogo (nota, gênero, descrição) via `gamelist.xml`
+  (padrão EmulationStation/ES-DE) — o `<name>` vira o título
+- [x] Tela de detalhes do jogo (botão direito → Detalhes)
+- [x] Tray icon enquanto joga (Mostrar / Parar / Sair)
+- [x] Export/import da config (Configurações → Geral)
 
 ## Licença
 

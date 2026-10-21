@@ -16,8 +16,9 @@ import stat
 from PySide6.QtCore import QSize, Qt, QThread, Signal
 from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QGroupBox,
-    QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem, QPushButton,
-    QSlider, QSplitter, QTabWidget, QVBoxLayout, QWidget,
+    QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem,
+    QMessageBox, QPushButton, QSlider, QSplitter, QTabWidget, QVBoxLayout,
+    QWidget,
 )
 
 from .catalog import CORES, EMULATORS, SYSTEMS, sys_short
@@ -150,7 +151,58 @@ class SettingsDialog(QDialog):
         self.core_auto.setChecked(bool(self.cfg.get("core_auto_update")))
         lay.addWidget(self.core_auto)
         lay.addWidget(self._group_covers())
+
+        # export/import da configuração (front.json → arquivo escolhido)
+        io_row = QHBoxLayout()
+        btn_exp = QPushButton(tr(self.cfg, "cfg_export"))
+        btn_exp.clicked.connect(self._export_cfg)
+        btn_imp = QPushButton(tr(self.cfg, "cfg_import"))
+        btn_imp.clicked.connect(self._import_cfg)
+        io_row.addWidget(btn_exp)
+        io_row.addWidget(btn_imp)
+        io_row.addStretch(1)
+        lay.addLayout(io_row)
         return box
+
+    # ---------- export/import ----------
+    def _export_cfg(self) -> None:
+        path, _ = QFileDialog.getSaveFileName(
+            self, tr(self.cfg, "cfg_export"),
+            os.path.join(os.path.expanduser("~"), "gamehub-config.json"),
+            "JSON (*.json)")
+        if not path:
+            return
+        if not path.lower().endswith(".json"):
+            path += ".json"
+        try:
+            self.cfg.export_to(path)
+        except OSError as e:
+            QMessageBox.warning(self, tr(self.cfg, "app_title"), str(e))
+            return
+        QMessageBox.information(self, tr(self.cfg, "app_title"),
+                                tr(self.cfg, "cfg_export_ok", p=path))
+
+    def _import_cfg(self) -> None:
+        path, _ = QFileDialog.getOpenFileName(
+            self, tr(self.cfg, "cfg_import"), os.path.expanduser("~"),
+            "JSON (*.json)")
+        if not path:
+            return
+        # destrutivo (substitui a config atual) → confirmação explícita
+        if QMessageBox.question(
+                self, tr(self.cfg, "app_title"),
+                tr(self.cfg, "cfg_import_confirm")) != QMessageBox.Yes:
+            return
+        err = self.cfg.import_from(path)
+        if err:
+            QMessageBox.warning(self, tr(self.cfg, "app_title"),
+                                tr(self.cfg, "cfg_import_err", e=err))
+            return
+        QMessageBox.information(self, tr(self.cfg, "app_title"),
+                                tr(self.cfg, "cfg_import_ok"))
+        # fecha como "salvo" pra janela principal reescanear — mas SEM passar
+        # pelo _apply, senão os widgets velhos sobrescreviam o import
+        self.done(QDialog.DialogCode.Accepted)
 
     def _group_covers(self) -> QGroupBox:
         """Capas: Libretro (livre) + ScreenScraper (fallback, com credencial)."""

@@ -15,6 +15,30 @@ STRINGS: dict[str, tuple[str, str]] = {
     "unfavorite": ("Desfavoritar", "Unfavorite"),
     "verify": ("Verificar integridade", "Verify integrity"),
     "open_folder": ("Abrir pasta do jogo", "Open game folder"),
+    # tela de detalhes
+    "menu_details": ("Detalhes", "Details"),
+    "det_genre": ("Gênero", "Genre"),
+    "det_rating": ("Nota", "Rating"),
+    "det_desc": ("Descrição", "Description"),
+    "det_path": ("Caminho", "Path"),
+    "det_close": ("Fechar", "Close"),
+    # tray enquanto joga
+    "tray_playing": ("Jogando: {t}", "Playing: {t}"),
+    "tray_show": ("Mostrar GameHub", "Show GameHub"),
+    "tray_stop": ("Parar jogo", "Stop game"),
+    "tray_quit": ("Sair", "Quit"),
+    # export/import da config
+    "cfg_export": ("Exportar configuração…", "Export settings…"),
+    "cfg_import": ("Importar configuração…", "Import settings…"),
+    "cfg_export_ok": ("Configuração exportada pra {p}.", "Settings exported to {p}."),
+    "cfg_import_confirm": ("Importar substitui a configuração atual. Continuar?",
+                           "Importing replaces the current settings. Continue?"),
+    "cfg_import_ok": ("Configuração importada.", "Settings imported."),
+    "cfg_import_err": ("Arquivo inválido: {e}", "Invalid file: {e}"),
+    "cfg_import_bad": ("Não parece uma configuração exportada do GameHub "
+                       "(falta emulators/rom_dirs).",
+                       "Doesn't look like an exported GameHub settings file "
+                       "(missing emulators/rom_dirs)."),
     "delete_rom": ("Apagar jogo", "Delete game"),
     "delete_confirm": ("Mover este jogo pra lixeira do sistema?",
                        "Move this game to the system trash?"),

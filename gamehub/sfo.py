@@ -4,11 +4,12 @@ from __future__ import annotations
 import struct
 
 
-def read_sfo_title(path: str) -> str | None:
-    """Lê o campo TITLE de um param.sfo/PARAM.SFO. None se falhar."""
+def title_from_bytes(d: bytes) -> str | None:
+    """Lê o campo TITLE de um PARAM.SFO já carregado. None se falhar.
+
+    Usado também pra iso de PS3 (SFO extraído sem gravar arquivo).
+    """
     try:
-        with open(path, "rb") as f:
-            d = f.read()
         if d[:4] != b"\x00PSF":
             return None
         key_off, data_off, n = struct.unpack("<III", d[8:20])
@@ -18,6 +19,15 @@ def read_sfo_title(path: str) -> str | None:
             if k == "TITLE":
                 raw = d[data_off + off: data_off + off + ln]
                 return raw.rstrip(b"\x00").decode("utf-8", "replace") or None
-    except (OSError, struct.error, ValueError):
+    except (struct.error, ValueError, IndexError):
         return None
     return None
+
+
+def read_sfo_title(path: str) -> str | None:
+    """Lê o campo TITLE de um param.sfo/PARAM.SFO. None se falhar."""
+    try:
+        with open(path, "rb") as f:
+            return title_from_bytes(f.read())
+    except OSError:
+        return None

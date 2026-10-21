@@ -68,6 +68,40 @@ class Config:
             json.dump(self.data, f, ensure_ascii=False, indent=2)
         os.replace(tmp, FRONT_CONFIG)
 
+    # ---------- export/import ----------
+    def export_to(self, path: str) -> None:
+        """Cópia fiel da configuração atual pra ``path`` (JSON)."""
+        tmp = path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(self.data, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, path)
+
+    def import_from(self, path: str) -> str | None:
+        """Importa configuração exportada de ``path`` e persiste.
+
+        ``None`` = ok; ``str`` = motivo da recusa (o arquivo não mexe em nada).
+        """
+        from .strings import tr
+        try:
+            with open(path, encoding="utf-8") as f:
+                saved = json.load(f)
+        except (OSError, json.JSONDecodeError) as e:
+            return str(e)
+        if (not isinstance(saved, dict)
+                or "emulators" not in saved or "rom_dirs" not in saved):
+            return tr(self, "cfg_import_bad")
+        # mesma semântica do load(): defaults, com o export por cima
+        data = json.loads(json.dumps(DEFAULTS))
+        for k, v in saved.items():
+            data[k] = v
+        for key in ("rom_dirs", "emulators"):
+            for sid in list(data.get(key, {})):
+                if sid not in SYSTEMS:
+                    del data[key][sid]
+        self.data = data
+        self.save()
+        return None
+
     # ---------- acesso ----------
     def __getitem__(self, key: str):
         return self.data[key]
